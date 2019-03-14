@@ -10,4 +10,15 @@ module.exports = {
     filename: 'main.js', // 输出文件名
     path: path.resolve(__dirname, 'dist'), // 输出路径
   },
+  module: {
+    rules: [
+      {
+        test: /\.css$/, // 匹配以 '.css' 为后缀的文件
+        use: [
+          'style-loader',
+          'css-loader',
+        ],
+      },
+    ],
+  },
 };
