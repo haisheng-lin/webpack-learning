@@ -19,6 +19,12 @@ module.exports = {
           'css-loader',
         ],
       },
+      {
+        test: /\.(png|svg|jpg|gif)$/, // 匹配各种格式的图片
+        use: [
+          'file-loader',
+        ],
+      },
     ],
   },
 };
