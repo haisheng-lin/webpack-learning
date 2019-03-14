@@ -19,6 +19,11 @@ module.exports = {
     app: './src/index.js',
     print: './src/print.js',
   },
+  devtool: 'inline-source-map',
+  // 告知 webpack-dev-server: 在 localhost:8080 下建立服务，将 dist 目录下的文件作为可访问文件
+  devServer: {
+    contentBase: './dist',
+  },
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
