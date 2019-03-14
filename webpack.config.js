@@ -5,9 +5,12 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.js', // 入口文件
+  entry: { // 入口文件
+    app: './src/index.js',
+    print: './src/print.js',
+  },
   output: {
-    filename: 'main.js', // 输出文件名
+    filename: '[name].bundle.js', // 输出文件名，其中 [name] 根据 entry 中的键值决定
     path: path.resolve(__dirname, 'dist'), // 输出路径
   },
   module: {
