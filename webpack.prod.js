@@ -4,8 +4,6 @@
 
 const path = require('path');
 
-const Webpack = require('webpack');
-
 // 如果我们更改了我们的一个入口起点的名称，甚至添加了一个新的名称，生成的包将被重命名在一个构建中
 // 但是我们的 index.html 文件仍然会引用旧的名字。我们用 HtmlWebpackPlugin 来解决这个问题
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -17,6 +15,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 module.exports = {
   mode: 'production',
@@ -34,8 +34,42 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
+    // 通常一个页面对应一个 HtmlWebpackPlugin
     new HtmlWebpackPlugin({
-      title: 'Output Management',
+      template: path.join(__dirname, 'src/index.html'), // 可以使用 ejs
+      filename: 'index.html',
+      chunks: ['index'],
+      inject: true,
+      minify: {
+        html5: true,
+        collapseWhitespace: true,
+        preserveLineBreaks: false,
+        minifyCSS: true,
+        minifyJS: true,
+        removeComments: true,
+      },
+    }),
+    // chunks: search，打包了 chunk 为 search 的文件，如 search.js, search.less
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'src/search.html'), // 可以使用 ejs
+      filename: 'search.html',
+      chunks: ['search'],
+      inject: true,
+      minify: {
+        html5: true,
+        collapseWhitespace: true,
+        preserveLineBreaks: false,
+        minifyCSS: true,
+        minifyJS: true,
+        removeComments: true,
+      },
+    }),
+    new MiniCssExtractPlugin({
+      filename: '[name]_[contenthash:8].css',
+    }),
+    new OptimizeCssAssetsPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcessor: require('cssnano'),
     }),
   ],
   output: {
@@ -73,9 +107,4 @@ module.exports = {
       },
     ],
   },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '[name]_[contenthash:8].css',
-    }),
-  ],
 };
