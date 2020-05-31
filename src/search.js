@@ -10,7 +10,7 @@ import './search.less';
 const Search = props => {
   return (
     <div className="search-text">
-      <span>Search Text</span>
+      <span>Search Text Content</span>
       <img src={logo} alt="logo" />
     </div>
   );

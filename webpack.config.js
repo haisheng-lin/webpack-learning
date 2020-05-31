@@ -4,6 +4,8 @@
 
 const path = require('path');
 
+const Webpack = require('webpack');
+
 // 如果我们更改了我们的一个入口起点的名称，甚至添加了一个新的名称，生成的包将被重命名在一个构建中
 // 但是我们的 index.html 文件仍然会引用旧的名字。我们用 HtmlWebpackPlugin 来解决这个问题
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -15,6 +17,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
   entry: {
     // 入口文件
     app: './src/index.js',
@@ -25,6 +28,7 @@ module.exports = {
   // 告知 webpack-dev-server: 在 localhost:8080 下建立服务，将 dist 目录下的文件作为可访问文件
   devServer: {
     contentBase: './dist',
+    hot: true,
   },
   plugins: [
     new CleanWebpackPlugin(),
@@ -64,4 +68,5 @@ module.exports = {
       },
     ],
   },
+  plugins: [new Webpack.HotModuleReplacementPlugin()],
 };
