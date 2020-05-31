@@ -52,8 +52,15 @@ module.exports = {
         use: ['style-loader', 'css-loader', 'less-loader'],
       },
       {
-        test: /\.(png|svg|jpg|gif)$/, // 匹配各种格式的图片
-        use: ['file-loader'],
+        test: /\.(png|svg|jpg|jpeg|gif)$/, // 匹配各种格式的图片
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              limit: 10240, // 10k 以下转 base64
+            },
+          },
+        ],
       },
     ],
   },
