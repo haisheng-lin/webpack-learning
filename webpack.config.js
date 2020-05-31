@@ -19,6 +19,7 @@ module.exports = {
     // 入口文件
     app: './src/index.js',
     print: './src/print.js',
+    search: './src/search.js',
   },
   devtool: 'inline-source-map',
   // 告知 webpack-dev-server: 在 localhost:8080 下建立服务，将 dist 目录下的文件作为可访问文件
