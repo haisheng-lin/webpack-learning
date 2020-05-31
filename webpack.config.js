@@ -43,8 +43,13 @@ module.exports = {
         use: 'babel-loader',
       },
       {
+        // loader 是从后往前调用的
         test: /\.css$/, // 匹配以 '.css' 为后缀的文件
         use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.less$/, // 匹配以 '.css' 为后缀的文件
+        use: ['style-loader', 'css-loader', 'less-loader'],
       },
       {
         test: /\.(png|svg|jpg|gif)$/, // 匹配各种格式的图片
