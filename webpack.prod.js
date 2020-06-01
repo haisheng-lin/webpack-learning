@@ -92,7 +92,21 @@ module.exports = {
       },
       {
         test: /\.less$/, // 匹配以 '.css' 为后缀的文件
-        use: [MiniCssExtractPlugin.loader, 'css-loader', 'less-loader'],
+        use: [
+          MiniCssExtractPlugin.loader,
+          'css-loader',
+          'less-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              plugins: [
+                require('autoprefixer')({
+                  overrideBrowserslist: ['last 2 version', '>1%', 'ios 7'],
+                }),
+              ],
+            },
+          },
+        ],
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/, // 匹配各种格式的图片
