@@ -19,10 +19,89 @@ https://juejin.im/post/5badd0c5e51d450e4437f07a#heading-0
 
 那么我们在编辑文件时，webpack 编译器就会重新打包文件，打包后的文件会传到 bundle 服务器，更新的文件也会被传到 HMR 服务器，HMR 服务器会告知客户端 runtime 有哪些文件更新了，那么 runtime 就会重新向 bundle 服务器请求文件资源，这就是整个 HMR 的流程
 
+### 自动清理构建目录
+
+使用 `clean-webpack-plugin`，每次构建前，先清空原有的构建目录
+
+### 解析 less, scss 等预处理器
+
+以 less 为例：引入 less 与 less-loader
+
+```javascript
+{
+  test: /\.less$/,
+  use: [
+    'css-loader',
+    'less-loader',
+  ],
+},
+```
+
 ### css 压缩
 
-使用 optimize-css-assets-webpack-plugin 与 cssnano
+使用 `optimize-css-assets-webpack-plugin` 与 `cssnano`
+
+```javascript
+// plugins 下增加
+new OptimizeCssAssetsPlugin({
+  assetNameRegExp: /\.css$/g,
+  cssProcessor: require('cssnano'),
+}),
+```
+
+### css 自动补全前缀
+
+引入 `postcss-loader` 与 `autoprefixer`
+
+```javascript
+// 在 css 等样式文件规则下增加
+{
+  loader: 'postcss-loader',
+  options: {
+    plugins: [
+      require('autoprefixer')({
+        overrideBrowserslist: ['last 2 version', '>1%', 'ios 7'],
+      }),
+    ],
+  },
+},
+```
 
 ### html 压缩
 
-使用 html-webpack-plugin 压缩
+使用 `html-webpack-plugin` 压缩
+
+```javascript
+// plugins 下增加
+new HtmlWebpackPlugin({
+  template: path.join(__dirname, 'src/search.html'), // 可以使用 ejs
+  filename: 'search.html',
+  chunks: ['search'],
+  inject: true,
+  minify: {
+    html5: true,
+    collapseWhitespace: true,
+    preserveLineBreaks: false,
+    minifyCSS: true,
+    minifyJS: true,
+    removeComments: true,
+  },
+}),
+```
+
+### px 转 rem
+
+- 引入 amfe-flexible，它会帮我们计算并注入根元素的 font-size 大小
+- 引入 `px2rem-loader` (也可以用 `postcss-pxtorem`)
+
+在项目 (如 index.js) 引入 `amfe-flexible`
+
+```javascript
+{
+  loader: 'px2rem-loader',
+  options: {
+    remUnit: 75, // 1rem = 75px
+    remPrecision: 8,
+  },
+},
+```
