@@ -3,6 +3,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import 'amfe-flexible';
+
 import logo from './icon.png';
 
 import './search.less';
