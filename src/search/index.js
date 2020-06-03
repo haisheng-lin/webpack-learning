@@ -1,21 +1,35 @@
 'use strict';
 
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import 'amfe-flexible';
 
 import logo from '../assets/images/icon.png';
+// import Test from './test';
 
 import './index.less';
 
 const Search = props => {
+  const [Test, setTest] = useState(null);
+
+  const lazyLoad = () => {
+    const component = React.lazy(() => import('./lazy-load'));
+    setTest(component);
+  };
+
   return (
     <div className="search-text">
-      <span>Search Text Content</span>
+      <span onClick={lazyLoad}>Search Text Content</span>
       <img src={logo} alt="logo" />
+      {Test ? <Test /> : null}
     </div>
   );
 };
 
-ReactDOM.render(<Search />, document.querySelector('#app'));
+ReactDOM.render(
+  <React.Suspense fallback={<>loading...</>}>
+    <Search />
+  </React.Suspense>,
+  document.querySelector('#app')
+);

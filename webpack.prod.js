@@ -142,7 +142,7 @@ module.exports = {
           test: /(react|react-dom)/,
           name: 'vendors',
           chunks: 'all',
-          minChunks: 2, // 最小的被引用次数
+          // minChunks: 2, // 最小的被引用次数
         },
       },
     },

@@ -236,3 +236,82 @@ new HtmlWebpackPlugin({
   },
 });
 ```
+
+### tree-shaking
+
+- `mode: 'production'` 默认开启了
+- 要求你的方法不能有 "副作用"，否则摇树失效（当然是可修改配置的）
+
+### 模块转换分析
+
+```javascript
+// 源码
+import { helloWorld } from './hello-world';
+import './common';
+
+document.write(helloWorld());
+```
+
+会被转换成：
+
+```javascript
+/* 0 */
+/***/ (function (module, __webpack_exports__, __webpack_require__) {
+  'use strict';
+  __webpack_require__.r(__webpack_exports__);
+  /* harmony import */ var _common__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(
+    1
+  );
+  /* harmony import */ var _helloworld__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(
+    2
+  );
+  document.write(_helloworld__WEBPACK_IMPORTED_MODULE_1__('helloWorld'));
+  /***/
+});
+```
+
+可以看出：
+
+- 被 webpack 转换后的模块会带上一层包裹，IIFE(匿名闭包)
+- import 会被转换成 **webpack_require**，用来加载模块（接受参数 moduleId 通过 jsonp 加载）
+- 通常来说 moduleId 为 0 的模块是主程序的入口
+
+### scope hoisting
+
+https://zhuanlan.zhihu.com/p/27980441
+
+原理：将所有模块代码按照引用顺序放在一个函数作用域里，然后适当的重命名一些变量以避免命名冲突
+
+譬如 b 模块引用了 a 模块，如果没有对顺序做处理的话，a 和 b 都会产生一个包裹 (即使 b 模块在 a 之前也没影响)；如果开启了 scope hoisting，则会在 b 之前声明 a 模块，且不会产生包裹
+
+> 可以简单的把 scope hoisting 理解为是把每个模块被 webpack 处理成的模块初始化函数整理到一个统一的包裹函数里，也就是把多个作用域用一个作用域取代，以减少内存消耗并减少包裹块代码，从每个模块有一个包裹函数变成只有一个包裹函数包裹所有的模块，但是有一个前提就是，当模块的引用次数大于 1 时，比如被引用了两次或以上，那么这个效果会无效，也就是被引用多次的模块在被 webpack 处理后，会被独立的包裹函数所包裹
+
+个人理解：就是把被引用依赖的模块，提升至最前面优先声明
+
+- 对比：通过 scope hoisting 可以减少函数声明代码和内存开销
+- `mode: 'production'` 会默认开启 (webpack4)，必须是 ES6 语法，CommonJS 不支持
+- webpack3 的话需在 plugins 加上 `new Webpack.optimize.ModuleConcatenationPlugin()`
+
+### 代码分割
+
+- 抽离相同代码到一个共享块
+- 脚本懒加载，使得初始下载的代码更小
+
+懒加载的方式：
+
+- CommonJS: require.ensure
+- ES6: 动态 import，webpack 推荐方案 (目前还没有原生支持，需要 babel 转换)
+
+如何使用动态 import?
+
+1. 安装 babel 插件：`yarn add --dev @babel/plugin-syntax-dynamic-import`
+
+2. 在 `.babelrc` 添加
+
+```
+{
+  "plugins": [
+    "@babel/plugin-syntax-dynamic-import"
+  ]
+}
+```
