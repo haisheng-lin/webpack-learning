@@ -89,6 +89,16 @@ new HtmlWebpackPlugin({
 }),
 ```
 
+### html 内联
+
+使用 `raw-loader`: 把一段 html 代码被引入到另一个 html 文件中达到复用
+
+```html
+<!-- 在你想要引入的地方按这种格式写就行了，! 后面是要引入的文件路径 -->
+<!-- 由于 webpack 默认使用的模板是 ejs，所以可以这么用 ejs 语法 -->
+${ require('raw-loader!./meta.html') }
+```
+
 ### px 转 rem
 
 - 引入 amfe-flexible，它会帮我们计算并注入根元素的 font-size 大小
