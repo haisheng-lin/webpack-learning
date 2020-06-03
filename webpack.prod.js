@@ -36,7 +36,7 @@ const setSPA = () => {
       new HtmlWebpackPlugin({
         template: path.join(__dirname, `src/${pageName}/index.html`), // 可以使用 ejs
         filename: `${pageName}.html`,
-        chunks: [pageName],
+        chunks: ['vendors', pageName], // vendors 是下面基础库分离出来的
         inject: true,
         minify: {
           html5: true,
@@ -133,5 +133,18 @@ module.exports = {
         ],
       },
     ],
+  },
+  optimization: {
+    splitChunks: {
+      minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
+      cacheGroups: {
+        commons: {
+          test: /(react|react-dom)/,
+          name: 'vendors',
+          chunks: 'all',
+          minChunks: 2, // 最小的被引用次数
+        },
+      },
+    },
   },
 };

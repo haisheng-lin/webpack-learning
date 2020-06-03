@@ -166,3 +166,73 @@ const setSPA = () => {
   };
 };
 ```
+
+### 基础库分离
+
+- 思路：将基础库通过 cdn 引入，不打入 bundle
+- 方法：使用 `html-webpack-externals-plugin`
+- 方法：webpack4 也可以利用 `SplitChunksPlugin` 进行公共脚本分离
+
+#### 使用 HtmlWebpackExternalsPlugin
+
+```javascript
+// 忽略 react 与 react-dom 的打包
+new HtmlWebpackExternalsPlugin({
+  externals: [
+    {
+      module: 'react',
+      entry: 'xxx', // 这里填 react.min.js cdn 地址
+      global: 'React',
+    },
+    {
+      module: 'react-dom',
+      entry: 'xxx', // 这里填 react-dom.min.js cdn 地址
+      global: 'ReactDOM',
+    },
+  ],
+});
+```
+
+然后在你的 html 文件手动加上 react 与 react-dom 脚本:
+
+```html
+<script type="text/javascript" src="xxx/react.min.js"></script>
+<script type="text/javascript" src="xxx/react-dom.min.js"></script>
+```
+
+#### 使用 SplitChunksPlugin
+
+```javascript
+optimization: {
+  splitChunks: {
+    minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
+    cacheGroups: {
+      commons: {
+        test: /(react|react-dom)/,
+        name: 'vendors',
+        chunks: 'all',
+        minChunks: 2, // 最小的被引用次数
+      },
+    },
+  },
+},
+```
+
+同时记得在 HtmlWebpackPlugin 补上：
+
+```javascript
+new HtmlWebpackPlugin({
+  template: path.join(__dirname, `src/${pageName}/index.html`), // 可以使用 ejs
+  filename: `${pageName}.html`,
+  chunks: ['vendors', pageName], // vendors 是下面基础库分离出来的
+  inject: true,
+  minify: {
+    html5: true,
+    collapseWhitespace: true,
+    preserveLineBreaks: false,
+    minifyCSS: true,
+    minifyJS: true,
+    removeComments: true,
+  },
+});
+```
