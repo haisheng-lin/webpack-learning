@@ -3,6 +3,7 @@
 // option2: 在 package.json 中写个 npm script
 
 const path = require('path');
+const glob = require('glob');
 
 // 如果我们更改了我们的一个入口起点的名称，甚至添加了一个新的名称，生成的包将被重命名在一个构建中
 // 但是我们的 index.html 文件仍然会引用旧的名字。我们用 HtmlWebpackPlugin 来解决这个问题
@@ -18,14 +19,48 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
+const setSPA = () => {
+  // 通常一个页面对应一个 HtmlWebpackPlugin
+  const entry = {};
+  const htmlWebpackPlugins = [];
+
+  const entryFiles = glob.sync(path.resolve(__dirname, 'src/*/index.js'));
+
+  entryFiles.forEach(entryFile => {
+    // 'E:/Work/Workspace/webpack-learning/src/search/index.js'
+    const match = entryFile.match(/src\/(.*)\/index\.js/);
+    const pageName = match && match[1];
+
+    entry[pageName] = entryFile;
+    htmlWebpackPlugins.push(
+      new HtmlWebpackPlugin({
+        template: path.join(__dirname, `src/${pageName}/index.html`), // 可以使用 ejs
+        filename: `${pageName}.html`,
+        chunks: [pageName],
+        inject: true,
+        minify: {
+          html5: true,
+          collapseWhitespace: true,
+          preserveLineBreaks: false,
+          minifyCSS: true,
+          minifyJS: true,
+          removeComments: true,
+        },
+      })
+    );
+  });
+
+  return {
+    entry,
+    htmlWebpackPlugins,
+  };
+};
+
+const { entry, htmlWebpackPlugins } = setSPA();
+
 module.exports = {
   mode: 'production',
-  entry: {
-    // 入口文件
-    app: './src/index.js',
-    print: './src/print.js',
-    search: './src/search.js',
-  },
+  entry,
   devtool: 'inline-source-map',
   // 告知 webpack-dev-server: 在 localhost:8080 下建立服务，将 dist 目录下的文件作为可访问文件
   devServer: {
@@ -34,36 +69,6 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    // 通常一个页面对应一个 HtmlWebpackPlugin
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'src/index.html'), // 可以使用 ejs
-      filename: 'index.html',
-      chunks: ['index'],
-      inject: true,
-      minify: {
-        html5: true,
-        collapseWhitespace: true,
-        preserveLineBreaks: false,
-        minifyCSS: true,
-        minifyJS: true,
-        removeComments: true,
-      },
-    }),
-    // chunks: search，打包了 chunk 为 search 的文件，如 search.js, search.less
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'src/search.html'), // 可以使用 ejs
-      filename: 'search.html',
-      chunks: ['search'],
-      inject: true,
-      minify: {
-        html5: true,
-        collapseWhitespace: true,
-        preserveLineBreaks: false,
-        minifyCSS: true,
-        minifyJS: true,
-        removeComments: true,
-      },
-    }),
     new MiniCssExtractPlugin({
       filename: '[name]_[contenthash:8].css',
     }),
@@ -71,6 +76,7 @@ module.exports = {
       assetNameRegExp: /\.css$/g,
       cssProcessor: require('cssnano'),
     }),
+    ...htmlWebpackPlugins,
   ],
   output: {
     filename: '[name]_[chunkhash:8].js', // 输出文件名，其中 [name] 根据 entry 中的键值决定

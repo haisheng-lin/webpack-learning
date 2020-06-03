@@ -5,9 +5,9 @@ import ReactDOM from 'react-dom';
 
 import 'amfe-flexible';
 
-import logo from './icon.png';
+import logo from '../assets/images/icon.png';
 
-import './search.less';
+import './index.less';
 
 const Search = props => {
   return (

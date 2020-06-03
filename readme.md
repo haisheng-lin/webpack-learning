@@ -115,3 +115,54 @@ ${ require('raw-loader!./meta.html') }
   },
 },
 ```
+
+### 多页面打包通用方案
+
+第一种
+
+使用 webpack entry 指定多文件入口。但是每次新增、删除页面都要改配置，显然不是优雅的方案
+
+第二种：动态获取 entry 和设置 `html-webpack-plugin` 数量
+
+- 利用 `glob` 这个库，glob.sync 同步获取所有 entry 文件
+
+然后设置进 entry 属性，htmlWebpackPlugins 设置进 plugins 即可
+
+```javascript
+// 动态获取 entry 以及设置 HtmlWebpackPlugin
+const setSPA = () => {
+  const entry = {};
+  const htmlWebpackPlugins = [];
+
+  const entryFiles = glob.sync(path.resolve(__dirname, 'src/*/index.js'));
+
+  entryFiles.forEach(entryFile => {
+    // 'E:/Work/Workspace/webpack-learning/src/search/index.js'
+    const match = entryFile.match(/src\/(.*)\/index\.js/); // 约定了入口是 xxx/index.js
+    const pageName = match && match[1];
+
+    entry[pageName] = entryFile;
+    htmlWebpackPlugins.push(
+      new HtmlWebpackPlugin({
+        template: path.join(__dirname, `src/${pageName}/index.html`), // 可以使用 ejs
+        filename: `${pageName}.html`,
+        chunks: [pageName],
+        inject: true,
+        minify: {
+          html5: true,
+          collapseWhitespace: true,
+          preserveLineBreaks: false,
+          minifyCSS: true,
+          minifyJS: true,
+          removeComments: true,
+        },
+      })
+    );
+  });
+
+  return {
+    entry,
+    htmlWebpackPlugins,
+  };
+};
+```
