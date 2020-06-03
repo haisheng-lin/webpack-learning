@@ -315,3 +315,55 @@ https://zhuanlan.zhihu.com/p/27980441
   ]
 }
 ```
+
+### 对基础库进行打包
+
+要求打包压缩版和非压缩版的文件，同时支持 esmodule、CommonJS 等引入方式
+
+```javascript
+entry: {
+  algorithm: path.resolve(__dirname, 'src/index'),
+  'algorithm.min': path.resolve(__dirname, 'src/index'),
+},
+output: {
+  filename: '[name].js', // 输出文件名，其中 [name] 根据 entry 中的键值决定
+  library: 'algorithm', // 库名称
+  libraryTarget: 'umd',
+  libraryExport: 'default',
+  path: path.resolve(__dirname, 'dist'), // 输出路径
+},
+```
+
+如何只针对 min.js 文件进行压缩？
+
+- 首先设置 `mode: none` 禁止默认的代码压缩功能
+- 通过 include 设置只压缩 min.js 结尾的文件
+
+```javascript
+optimization: {
+  minimize: true,
+  minimizer: [
+    new TerserPlugin({
+      include: /\.min\.js$/,
+    })
+  ]
+}
+```
+
+如何设置入口文件？
+
+在 `package.json` 的 main 属性设为 `index.js`
+
+```javascript
+// index.js
+// 如果 webpack.config.js 设置的 mode 是 production，则 env 就是 production
+// 否则是 development
+const env = process.env.NODE_ENV;
+
+const entry =
+  env === 'production'
+    ? require('./dist/algorithm.min')
+    : require('./dist/algorithm');
+
+module.exports = entry;
+```
