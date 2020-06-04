@@ -405,3 +405,66 @@ plugins: [
   },
 ];
 ```
+
+### 构建配置抽离成 npm 包的意义
+
+通用性
+
+- 业务开发者无需关注构建配置
+- 统一团队构建脚本
+
+可维护性
+
+- 构建配置合理的拆分
+- README 文档、ChangeLog 文档等
+
+质量
+
+- 冒烟测试、单元测试、测试覆盖率
+- 持续集成
+
+构建配置管理的方案
+
+- 通过多个配置文件管理不同环境的构建，webpack --config 进行参数控制
+- 将构建配置设计成一个库，比如：hjs-webpack, Neutrino, webpack-blocks
+- 抽成一个工具进行管理，比如：create-react-app, kyt, nwb
+- 把所有配置放在一个文件，通过 --env 参数控制分支选择
+
+### 功能模块设计
+
+基础配置 `webpack.base.js`
+
+- 解析 ES6
+- 解析 React
+- 解析 css, less, autoprefixer, pxtorem 等, css 提取单独文件
+- 解析图片、字体等
+- 目录清理
+- 多页面打包
+- 命令行信息提示优化
+- 错误捕获与处理
+
+开发阶段配置 `webpack.dev.js`
+
+- 代码热更新
+- sourcemap
+
+生成阶段配置 `webpack.prod.js`
+
+- 代码压缩
+- 文件指纹（哈希）
+- tree shaking
+- scope hoisting
+- 速度优化（基础 cdn）
+- 体积优化（代码分割）
+
+SSR 配置 `webpack.ssr.js`
+
+- output libraryTarget
+- css 解析 ignore
+
+通过 `webpack-merge` 合并参数
+
+测试：
+
+- 判断是否构建成功
+- 判断基本功能是否正常：编写 mocha 测试用例，是否有 js, css, html 文件等
