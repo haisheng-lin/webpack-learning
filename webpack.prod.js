@@ -16,7 +16,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-
+const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 const setSPA = () => {
@@ -76,6 +76,7 @@ module.exports = {
       assetNameRegExp: /\.css$/g,
       cssProcessor: require('cssnano'),
     }),
+    new FriendlyErrorsWebpackPlugin(),
     ...htmlWebpackPlugins,
   ],
   output: {
@@ -147,4 +148,5 @@ module.exports = {
       },
     },
   },
+  stats: 'errors-only',
 };

@@ -367,3 +367,9 @@ const entry =
 
 module.exports = entry;
 ```
+
+### 优化构建日志
+
+[文档](https://www.webpackjs.com/configuration/stats/) 统计信息: 配置 `stats` 字段
+
+使用 `friendly-errors-webpack-plugin`

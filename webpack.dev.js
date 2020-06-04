@@ -3,6 +3,7 @@
 // option2: 在 package.json 中写个 npm script
 
 const path = require('path');
+const glob = require('glob');
 
 const Webpack = require('webpack');
 
@@ -10,20 +11,56 @@ const Webpack = require('webpack');
 // 但是我们的 index.html 文件仍然会引用旧的名字。我们用 HtmlWebpackPlugin 来解决这个问题
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
+
 // 由于 dist 目录在过去的指南和代码实例导致混乱不堪，webpack 会将打包文件放置在 dist 中
 // 但是 webpack 无法追踪哪些文件是实际项目中有用到的
 // 所以每次构建前都应该清理 dist 目录，是比较推荐的做法，而 clean-webpack-plugin 是当中比较普及的管理插件
 // 文档： https://github.com/johnagan/clean-webpack-plugin#options-and-defaults-optional
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 
+const setSPA = () => {
+  // 通常一个页面对应一个 HtmlWebpackPlugin
+  const entry = {};
+  const htmlWebpackPlugins = [];
+
+  const entryFiles = glob.sync(path.resolve(__dirname, 'src/*/index.js'));
+
+  entryFiles.forEach(entryFile => {
+    // 'E:/Work/Workspace/webpack-learning/src/search/index.js'
+    const match = entryFile.match(/src\/(.*)\/index\.js/);
+    const pageName = match && match[1];
+
+    entry[pageName] = entryFile;
+    htmlWebpackPlugins.push(
+      new HtmlWebpackPlugin({
+        template: path.join(__dirname, `src/${pageName}/index.html`), // 可以使用 ejs
+        filename: `${pageName}.html`,
+        chunks: ['vendors', pageName], // vendors 是下面基础库分离出来的
+        inject: true,
+        minify: {
+          html5: true,
+          collapseWhitespace: true,
+          preserveLineBreaks: false,
+          minifyCSS: true,
+          minifyJS: true,
+          removeComments: true,
+        },
+      })
+    );
+  });
+
+  return {
+    entry,
+    htmlWebpackPlugins,
+  };
+};
+
+const { entry, htmlWebpackPlugins } = setSPA();
+
 module.exports = {
   mode: 'development',
-  entry: {
-    // 入口文件
-    app: './src/index.js',
-    print: './src/print.js',
-    search: './src/search.js',
-  },
+  entry,
   devtool: 'inline-source-map',
   // 告知 webpack-dev-server: 在 localhost:8080 下建立服务，将 dist 目录下的文件作为可访问文件
   devServer: {
@@ -32,9 +69,9 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      title: 'Output Management',
-    }),
+    new FriendlyErrorsWebpackPlugin(),
+    new Webpack.HotModuleReplacementPlugin(),
+    ...htmlWebpackPlugins,
   ],
   output: {
     filename: '[name].bundle.js', // 输出文件名，其中 [name] 根据 entry 中的键值决定
@@ -48,12 +85,35 @@ module.exports = {
       },
       {
         // loader 是从后往前调用的
+        // mini-css-extract-plugin 与 style-loader 互斥
+        // style-loader 是把样式加入到 header 里面
+        // 而 mini-css-extract-plugin 是把样式提取到其他文件中
         test: /\.css$/, // 匹配以 '.css' 为后缀的文件
-        use: ['style-loader', 'css-loader'],
+        use: ['css-loader'],
       },
       {
         test: /\.less$/, // 匹配以 '.css' 为后缀的文件
-        use: ['style-loader', 'css-loader', 'less-loader'],
+        use: [
+          'css-loader',
+          'less-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              plugins: [
+                require('autoprefixer')({
+                  overrideBrowserslist: ['last 2 version', '>1%', 'ios 7'],
+                }),
+              ],
+            },
+          },
+          {
+            loader: 'px2rem-loader',
+            options: {
+              remUnit: 75, // 1rem = 75px ?
+              remPrecision: 8,
+            },
+          },
+        ],
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/, // 匹配各种格式的图片
@@ -68,5 +128,5 @@ module.exports = {
       },
     ],
   },
-  plugins: [new Webpack.HotModuleReplacementPlugin()],
+  stats: 'errors-only',
 };
