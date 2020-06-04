@@ -373,3 +373,35 @@ module.exports = entry;
 [文档](https://www.webpackjs.com/configuration/stats/) 统计信息: 配置 `stats` 字段
 
 使用 `friendly-errors-webpack-plugin`
+
+### 构建异常与中断处理
+
+幸运的是 webpack4 构建失败会抛出带错误码信息的异常
+
+NodeJs `process.exit` 规范
+
+- 0 表示成功完成，回调函数中，err 为 null
+- 非 0 表示执行失败，回调函数中 err 不为 null，且 err.code 就是传给 exit 的数字
+
+如何主动捕获并处理构建错误？
+
+- compiler 每次构建结束后都会触发 done 这个 hook
+- process.exit 主动处理构建报错
+- 异常处理可以根据自身需要决定，譬如数据上报
+
+```javascript
+plugins: [
+  function () {
+    this.hooks.done.tap('done', stats => {
+      if (
+        stats.compilation.errors &&
+        stats.compilations.errors.length &&
+        process.argv.indexOf('--watch') === -1
+      ) {
+        console.log('build error');
+        process.exit(1);
+      }
+    });
+  },
+];
+```

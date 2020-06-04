@@ -6,7 +6,6 @@ import ReactDOM from 'react-dom';
 import 'amfe-flexible';
 
 import logo from '../assets/images/icon.png';
-// import Test from './test';
 
 import './index.less';
 
