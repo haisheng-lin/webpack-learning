@@ -290,6 +290,29 @@ module.exports = {
 };
 ```
 
+备注：`vue-cli` 与 `create-react-app` 都去除了 dll 插件，认为 webpack4 的性能优化已经足够好，没有必要再使用 dll
+
+### 利用缓存提升二次构建速度
+
+目的：提升二次构建速度
+
+缓存思路
+
+- babel-loader 开启缓存 (`babel-loader?cacheDirectory=true`)
+- terser-webpack-plugin 开启缓存 (`cache: true`)
+- 使用 cache-loader 或 hard-source-webpack-plugin
+
+### 缩小构建目标
+
+比如 babel-loader 忽略 node_modules 文件
+
+减少文件搜索范围
+
+- 优化 resolve.modules 配置，不然先从当前目录找，找不到才去 node_modules 找，再递归到父目录找 (指明直接到 `path.resolve(__dirname, 'node_modules')` 查找)
+- 优化 resolve.mainFields 配置 (直接用 `[main]`)
+- 优化 resolve.extensions 配置
+- 合理使用 alias (譬如 'react' 直接配置到 node_modules 下，而不用经过一轮查找)
+
 ### tree-shaking
 
 - `mode: 'production'` 默认开启了

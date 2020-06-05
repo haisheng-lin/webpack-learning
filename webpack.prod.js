@@ -20,6 +20,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 
 const SpeedMeasureWebpackPlugin = require('speed-measure-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
@@ -97,9 +98,10 @@ module.exports = smp.wrap({
       });
     },
     // new BundleAnalyzerPlugin(),
-    new Webpack.DllReferencePlugin({
-      manifest: require('./build/library/library.json'),
-    }),
+    // new Webpack.DllReferencePlugin({
+    //   manifest: require('./build/library/library.json'),
+    // }),
+    new HardSourceWebpackPlugin(),
     ...htmlWebpackPlugins,
   ],
   output: {
@@ -110,6 +112,7 @@ module.exports = smp.wrap({
     rules: [
       {
         test: /\.js$/,
+        include: path.resolve(__dirname, 'src'),
         use: [
           {
             loader: 'thread-loader',
@@ -117,7 +120,7 @@ module.exports = smp.wrap({
               workers: 3,
             },
           },
-          'babel-loader',
+          'babel-loader?cacheDirectory=true',
         ],
       },
       {
@@ -167,7 +170,7 @@ module.exports = smp.wrap({
     ],
   },
   optimization: {
-    minimizer: [new TerserWebpackPlugin({ parallel: true })],
+    minimizer: [new TerserWebpackPlugin({ parallel: true, cache: true })],
     // splitChunks: {
     //   minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
     //   cacheGroups: {
