@@ -18,6 +18,12 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const TerserWebpackPlugin = require('terser-webpack-plugin');
+
+const SpeedMeasureWebpackPlugin = require('speed-measure-webpack-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+
+const smp = new SpeedMeasureWebpackPlugin();
 
 const setSPA = () => {
   // 通常一个页面对应一个 HtmlWebpackPlugin
@@ -58,7 +64,7 @@ const setSPA = () => {
 
 const { entry, htmlWebpackPlugins } = setSPA();
 
-module.exports = {
+module.exports = smp.wrap({
   mode: 'production',
   entry,
   devtool: 'inline-source-map',
@@ -89,6 +95,7 @@ module.exports = {
         }
       });
     },
+    // new BundleAnalyzerPlugin(),
     ...htmlWebpackPlugins,
   ],
   output: {
@@ -99,7 +106,15 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        use: 'babel-loader',
+        use: [
+          {
+            loader: 'thread-loader',
+            options: {
+              workers: 3,
+            },
+          },
+          'babel-loader',
+        ],
       },
       {
         // loader 是从后往前调用的
@@ -148,6 +163,7 @@ module.exports = {
     ],
   },
   optimization: {
+    minimizer: [new TerserWebpackPlugin({ parallel: true })],
     splitChunks: {
       minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
       cacheGroups: {
@@ -161,4 +177,4 @@ module.exports = {
     },
   },
   stats: 'errors-only',
-};
+});

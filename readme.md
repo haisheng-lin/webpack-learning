@@ -2,6 +2,15 @@
 
 纸上得来终觉浅，绝知此事要躬行。老老实实照着文档过一遍加深印象以及理解，毕竟好记性不如烂笔头。
 
+### TODO
+
+- SSR
+- eslint
+- 持续集成与 Travis CI
+- 发布构建包至 npm
+- git commit 规范与 changelog
+- 语义化版本规范格式
+
 ### webpack 原理
 
 https://juejin.im/post/5badd0c5e51d450e4437f07a#heading-0
@@ -468,3 +477,114 @@ SSR 配置 `webpack.ssr.js`
 
 - 判断是否构建成功
 - 判断基本功能是否正常：编写 mocha 测试用例，是否有 js, css, html 文件等
+
+### 持续集成 (CI)
+
+- 快速发现错误
+- 防止分支大幅偏离主干
+
+核心措施：代码集成到主干之前，必须通过自动化测试。只要有一个测试用例失败，就不能集成
+
+流行的 CI 方案包括但不限于：Travis, Circle, Jenkins, CodeShip 等等，在这里我们采用 travis 方案
+
+### 接入 travis
+
+- https://travis-ci.org 使用 github 登录
+- 在 https://travis-ci.org/accounts/repositories 为项目开启
+- 项目根目录下加 `.travis.yml`
+
+### 构建速度与体积优化策略
+
+#### 初级分析
+
+使用 webpack 内置的 stats，例如在 `package.json` 增加：
+
+```
+"scripts": {
+  "build:stats": "webpack --env production --json > stats.json"
+}
+```
+
+或者在 NodeJs 中使用：
+
+```javascript
+const webpack = require('webpack');
+const config = require('./webpack.config.js');
+
+webpack(config, (err, stats) => {
+  if (err) {
+    return console.error(err);
+  }
+
+  if (stats.hasErrors()) {
+    return console.error(stats.toString('errors-only'));
+  }
+
+  console.log(stats); // 输出统计分析结果
+});
+```
+
+缺点：只能看到构建时间、每个文件的大小，无法看出为什么文件会这么大、哪个组件比较大、哪个 loader 耗时长等等。颗粒度较粗，看不出问题所在
+
+### 速度分析
+
+使用 `speed-measure-webpack-plugin`
+
+- 分析整个打包总耗时
+- 每个 loader 和 plugin 的耗时情况
+
+优化方案：
+
+- 多进程、多实例构建 (thread-loader, parallel-webpack, HappyPack)
+- 多进程并行压缩代码 (webpack-parallel-uglify-plugin, uglify-webpack-plugin, terser-webpack-plugin)
+
+多进程构建以 `thread-loader` 为例：
+
+```javascript
+module: {
+  rules: [
+    {
+      test: /\.js$/,
+      use: [
+        {
+          loader: 'thread-loader',
+          options: {
+            workers: 3, // 对 js 解析开启 3 个进程
+          },
+        },
+        'babel-loader',
+      ],
+    },
+  ];
+}
+```
+
+多进程并行压缩使用 `terser-webpack-plugin` 开启 parallel 参数：
+
+```javascript
+const TerserPlugin = require('terser-webpack-plugin');
+
+module.exports = {
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        parallel: 4,
+      }),
+    ],
+  },
+};
+```
+
+### 体积分析
+
+使用 `webpack-bundle-analyzer`
+
+- 依赖的第三方模块文件大小
+- 业务里的组件代码大小
+
+### 使用高版本的 webpack 和 node
+
+- webpack4 采用高版本的 v8 带来的优化 (for of 替代 forEach，Map 和 Set 替代 Object，includes 替代 indexOf)
+- 默认使用更快的 md4 hash 算法
+- webpack AST 可以直接从 loader 传递给 AST，减少传递时间
+- 使用字符串方法替代正则表达式
