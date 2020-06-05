@@ -209,6 +209,8 @@ new HtmlWebpackExternalsPlugin({
 <script type="text/javascript" src="xxx/react-dom.min.js"></script>
 ```
 
+这种做法的弊端是，如果基础库有很多，那么就得创建很多个 script 标签
+
 #### 使用 SplitChunksPlugin
 
 ```javascript
@@ -244,6 +246,48 @@ new HtmlWebpackPlugin({
     removeComments: true,
   },
 });
+```
+
+### 进一步分包，预编译资源模块
+
+思路：将 react, react-dom, redux 等基础包与业务包打包成一个文件
+方法：使用 `DLLPlugin` 进行分包，DllReferencePlugin 对 manifest.json 引用，然后会关联 DLLPlugin 里面的包
+文档：https://www.webpackjs.com/plugins/dll-plugin/
+
+**一般会把这个文件单独抽离成 `webpack.dll.js`**
+
+```javascript
+module.exports = {
+  context: process.cwd(),
+  entry: {
+    library: ['react', 'react-dom', 'redux', 'react-redux'],
+  },
+  output: {
+    filename: '[name].dll.js',
+    path: path.join(__dirname, 'build/library'),
+    library: '[name]',
+  },
+  plugins: [
+    new Webpack.DllPlugin({
+      name: '[name]',
+      path: './build/library/[name].json',
+    }),
+  ],
+};
+```
+
+那么就可以 `webpack --config webpack.dll.js` 命令进行基础包的预编译了，以后的打包时如果遇到这些基础库则可以直接引用
+
+然后在 `webpack.config.js` 引入：
+
+```javascript
+module.exports = {
+  plugins: [
+    new Webpack.DllReferencePlugin({
+      manifest: require('./build/library/manifest.json'),
+    }),
+  ],
+};
 ```
 
 ### tree-shaking

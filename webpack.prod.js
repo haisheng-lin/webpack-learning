@@ -4,6 +4,7 @@
 
 const path = require('path');
 const glob = require('glob');
+const Webpack = require('webpack');
 
 // 如果我们更改了我们的一个入口起点的名称，甚至添加了一个新的名称，生成的包将被重命名在一个构建中
 // 但是我们的 index.html 文件仍然会引用旧的名字。我们用 HtmlWebpackPlugin 来解决这个问题
@@ -96,6 +97,9 @@ module.exports = smp.wrap({
       });
     },
     // new BundleAnalyzerPlugin(),
+    new Webpack.DllReferencePlugin({
+      manifest: require('./build/library/library.json'),
+    }),
     ...htmlWebpackPlugins,
   ],
   output: {
@@ -164,17 +168,17 @@ module.exports = smp.wrap({
   },
   optimization: {
     minimizer: [new TerserWebpackPlugin({ parallel: true })],
-    splitChunks: {
-      minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
-      cacheGroups: {
-        commons: {
-          test: /(react|react-dom)/,
-          name: 'vendors',
-          chunks: 'all',
-          // minChunks: 2, // 最小的被引用次数
-        },
-      },
-    },
+    // splitChunks: {
+    //   minSize: 0, // 最小的文件大小，小于它的话不会被分离打包
+    //   cacheGroups: {
+    //     commons: {
+    //       test: /(react|react-dom)/,
+    //       name: 'vendors',
+    //       chunks: 'all',
+    //       // minChunks: 2, // 最小的被引用次数
+    //     },
+    //   },
+    // },
   },
   stats: 'errors-only',
 });
