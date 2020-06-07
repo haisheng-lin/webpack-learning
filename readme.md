@@ -313,10 +313,49 @@ module.exports = {
 - 优化 resolve.extensions 配置
 - 合理使用 alias (譬如 'react' 直接配置到 node_modules 下，而不用经过一轮查找)
 
+### 动态 polyfill
+
+babel-polyfill: React 官方推荐，但是包体积 200K+
+
+babel-plugin-transform-runtime: polyfill 用到的类和方法，相对体积较小；不能用 polyfill 原型上的方法，不适用于复杂开发环境
+
+自己写 polyfill: 定制化高，体积小；但是重复造轮子，容易日后年久失修成为坑，而且即使体积小，所有用户依然得加载
+
+polyfill-service: 只给用户返回需要的 polyfill，社区维护；部分国内奇葩浏览器 UA 无法识别（可以降级返回所需全部 polyfill）
+
+polyfill-service
+
+原理：识别 UA，下发不同的 polyfill
+
+如何使用：
+
+- polyfill.io 官方提供的服务 `<script src="//cdn.polyfill.io/v2/polyfill.min.js"></script>`
+- 基于官方自建 polyfill 服务
+
 ### tree-shaking
 
 - `mode: 'production'` 默认开启了
 - 要求你的方法不能有 "副作用"，否则摇树失效（当然是可修改配置的）
+
+### 对 css 进行 tree-shaking
+
+- `PurifyCSS`: 遍历代码，识别已经用到的 css class
+- `uncss`: HTML 需要 jsdom 加载，所有样式通过 postcss 解析，通过 document.querySelector 识别 html 文件不存在的选择器
+
+在 webpack 如何使用 `PurifyCSS`
+
+由于该插件没有进行维护，所以使用另一种方案 `purgecss-webpack-plugin` 和 `mini-css-extract-plugin` 配合使用
+
+### 对图片压缩
+
+要求：基于 Node 库的 imagemin 或者 tinypng API
+使用：配置 `image-webpack-loader`
+
+imagemin 优点分析：
+
+- 有很多定制选项
+- 可引入更多第三方插件，例如 pngquant
+- 可处理多种图片格式
 
 ### 模块转换分析
 
@@ -655,3 +694,11 @@ module.exports = {
 - 默认使用更快的 md4 hash 算法
 - webpack AST 可以直接从 loader 传递给 AST，减少传递时间
 - 使用字符串方法替代正则表达式
+
+### 体积优化策略总结
+
+- scope hoisting
+- tree-shaking
+- 公共资源分离
+- 图片压缩
+- 动态 polyfill

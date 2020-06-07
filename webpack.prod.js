@@ -21,11 +21,16 @@ const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
+const PurgeCSSWebpackPlugin = require('purgecss-webpack-plugin');
 
 const SpeedMeasureWebpackPlugin = require('speed-measure-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const smp = new SpeedMeasureWebpackPlugin();
+
+const PATHS = {
+  src: path.resolve(__dirname, 'src'),
+};
 
 const setSPA = () => {
   // 通常一个页面对应一个 HtmlWebpackPlugin
@@ -102,6 +107,9 @@ module.exports = smp.wrap({
     //   manifest: require('./build/library/library.json'),
     // }),
     new HardSourceWebpackPlugin(),
+    new PurgeCSSWebpackPlugin({
+      paths: glob.sync(`${PATHS.src}/**/*`, { nodir: true }),
+    }),
     ...htmlWebpackPlugins,
   ],
   output: {
@@ -163,6 +171,30 @@ module.exports = smp.wrap({
             loader: 'url-loader',
             options: {
               limit: 10240, // 10k 以下转 base64
+            },
+          },
+          {
+            loader: 'image-webpack-loader',
+            options: {
+              mozjpeg: {
+                progressive: true,
+                quality: 65,
+              },
+              // optipng.enabled: false will disable optipng
+              optipng: {
+                enabled: false,
+              },
+              pngquant: {
+                quality: [0.65, 0.9],
+                speed: 4,
+              },
+              gifsicle: {
+                interlaced: false,
+              },
+              // the webp option will enable WEBP
+              webp: {
+                quality: 75,
+              },
             },
           },
         ],
