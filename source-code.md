@@ -98,6 +98,13 @@ if (Array.isArray(options)) {
 } else if (typeof options === 'object') {
   // ...
 }
+
+// ...
+
+// 将 webpack 内置的一些插件注入到 compiler
+// WebpackOptionsApply 会把配置的 options 转换成 webpack 内部插件
+// 比如：output.library -> LibraryTemplatePlugin, externals -> ExternalsPlugin
+compiler.options = new WebpackOptionsApply().process(options, compiler);
 ```
 
 通过 `Compiler` 和 `Compilation` 得知它们都继承自 `Tapable` 这个类：
@@ -184,3 +191,17 @@ car.hooks.calculateRoutes.promise('Async', 'hook', 'demo').then(
   }
 );
 ```
+
+### webpack 流程篇
+
+webpack 编译按照下面的钩子调用顺序执行（实际上事件数量非常多，这里列举较为关键的）：
+
+- `entry-option`: 初始化 option
+- `run`: 开始编译
+- `make`: 从 entry 开始递归分析依赖，对每个依赖模块进行构建
+- `before-resolve`: 对模块位置进行解析
+- `build-module`: 开始构建某个模块
+- `normal-module-loader`: 将 loader 加载完成的 module 进行编译，生成 AST 树
+- `program`: 遍历 AST，当遇到 require 之类的表达式时收集依赖
+- `seal`: 所有依赖 build 完毕，开始优化
+- `emit`: 输出到 dist 目录
