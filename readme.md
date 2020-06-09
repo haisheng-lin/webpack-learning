@@ -232,3 +232,106 @@ runLoaders(
   }
 );
 ```
+
+### plugin
+
+- 每个 plugin 内部必须有 `apply` 方法
+- 插件没有像 loader 那样的独立运行环境，只能在 webpack 里面运行
+
+#### 插件的参数获取
+
+`apply` 方法接受 compiler 参数，也可以从自身 `this` 中获取
+
+#### 插件的错误处理
+
+- 参数校验阶段可通过 `throw` 方式抛出
+- 通过 `compilation` 对象的 warnings 和 errors 接收
+
+```javascript
+compilation.warnings.push('warning');
+compilation.errors.push('error');
+```
+
+#### 通过 compilation 进行文件写入
+
+- `compilation` 上的 assets 可以用于文件写入
+- 需要用到 `webpack-sources`
+
+```javascript
+const { RawSource } = require('webpack-sources');
+
+class DemoPlugin {
+  apply(compiler) {
+    compiler.hooks.emit('emit', (compilation, callback) => {
+      compilation.assets['my-name'] = new RawSource('demo');
+      callback();
+    });
+  }
+}
+```
+
+#### 编写插件的插件
+
+插件自身也可以通过暴露 hooks 方式进行扩展，以 `html-webpack-plugin` 为例：
+
+- html-webpack-plugin-alter-chunks (Sync)
+- html-webpack-plugin-before-html-generation (Async)
+- html-webpack-plugin-after-asset-tags (Async)
+
+#### 实战编写一个压缩构建资源为 zip 包的插件
+
+要求
+
+- 生成的 zip 包文件名称可通过插件传入
+- 需要使用 compiler 对象的特地 hooks 进行资源生成 (不能用 NodeJS fs.writeFile)
+
+准备：如何文件压缩成 zip？使用 [jszip](https://www.npmjs.com/package/jszip)
+
+准备：Compiler 上负责文件生成的 hooks
+
+- hooks 是 emit，是一个异步的 hook (AsyncSeriesHook)
+- emit 是文件生成阶段，读取的是 compilation.assets 对象的值，所以可以将 zip 包设置到 `compilation.assets` 对象上
+
+```javascript
+const path = require('path');
+const RawSource = require('webpack-sources').RawSource;
+const JsZip = require('jszip');
+
+const zip = new JsZip();
+
+class ZipPlugin {
+  constructor(options) {
+    this.options = options;
+  }
+
+  apply(compiler) {
+    // 因为 emit 是异步钩子，所以用 tapAsync
+    compiler.hooks.emit.tapAsync('ZipPlugin', (compilation, callback) => {
+      const folder = zip.folder(this.options.filename);
+
+      for (const filename in compilation.assets) {
+        const source = compilation.assets[filename].source();
+        folder.file(filename, source);
+      }
+
+      const actualFilename = this.options.filename + '.zip';
+
+      zip.generateAsync({ type: 'nodebuffer' }).then(content => {
+        const outputAbsolutePath = path.resolve(
+          compilation.options.output.path,
+          actualFilename
+        );
+        const outputRelativePath = path.relative(
+          compilation.options.output.path,
+          outputAbsolutePath
+        );
+
+        compilation.assets[outputRelativePath] = new RawSource(content);
+        callback();
+      });
+    });
+  }
+}
+
+module.exports = ZipPlugin;
+```
